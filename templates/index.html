@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detecção de Ferramentas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.4/css/bulma.min.css">
+</head>
+<body>
+    <section class="section">
+        <div class="container">
+            <h1 class="title">Detecção de Ferramentas</h1>
+            <div class="box">
+                <video id="camera" autoplay></video>
+                <canvas id="canvas" style="display: none;"></canvas>
+                <button class="button is-primary mt-3" onclick="captureImage()">Capturar</button>
+            </div>
+            <div id="result" class="notification is-light" style="display: none;"></div>
+        </div>
+    </section>
+
+    <script>
+        const video = document.getElementById('camera');
+        const canvas = document.getElementById('canvas');
+        const resultDiv = document.getElementById('result');
+
+        // Ativar câmera
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => video.srcObject = stream)
+            .catch(err => console.error("Erro ao acessar a câmera: ", err));
+
+        function captureImage() {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = canvas.toDataURL('image/jpeg');
+
+            fetch('/capture', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: imageData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                resultDiv.innerHTML = "<strong>Resultado:</strong><br>" + JSON.stringify(data.results, null, 2);
+                resultDiv.style.display = "block";
+            })
+            .catch(error => console.error("Erro ao enviar imagem: ", error));
+        }
+    </script>
+</body>
+</html>
